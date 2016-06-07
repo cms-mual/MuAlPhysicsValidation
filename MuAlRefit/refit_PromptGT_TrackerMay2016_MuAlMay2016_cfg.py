@@ -8,6 +8,11 @@ process = cms.Process("MUALREFIT")
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(*input_files)
 )
+
+import FWCore.PythonUtilities.LumiList as LumiList
+process.source.lumisToProcess = LumiList.LumiList(filename = '/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/Cert_271036-274240_13TeV_PromptReco_Collisions16_JSON_MuonPhys.txt').getVLuminosityBlockRange()
+
+
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 
 process.MessageLogger = cms.Service("MessageLogger",
