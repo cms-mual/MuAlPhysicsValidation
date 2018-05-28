@@ -19,7 +19,7 @@ process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = "80X_mcRun2_design_v19" #! GT Here
 
 process.load('Configuration.StandardSequences.GeometryDB_cff')
-process.load("Geometry.CMSCommonData.cmsExtendedGeometry2016aXML_cfi") # is this correct geometry for 2016 run???
+process.load("Geometry.CMSCommonData.cmsExtendedGeometry2018XML_cfi") # is this correct geometry for 2016 run???
 process.load('Configuration.StandardSequences.MagneticField_cff')
 
 process.load("Configuration.StandardSequences.Reconstruction_cff")
