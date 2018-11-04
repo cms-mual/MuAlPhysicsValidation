@@ -1,5 +1,10 @@
+# recoDimuon
+
+print "Beginning recoDimuons loop..."
+
 for counter, event in enumerate(recoDimuons):
-  if counter % 100000 == 0: print counter, (counter +0.0)/event.GetEntries()
+  if counter % 100000 == 0: 
+	print "On event {} [{}% completed]".format(counter, 100*round((counter +0.0)/event.GetEntries(), 4))
   if(Event_ro_RUN>0):
     if counter > Event_ro_RUN: break
   

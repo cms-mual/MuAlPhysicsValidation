@@ -15,9 +15,11 @@ if(method=="equal"):
   if nNeg>nPos: nMinPosNeg = nPos
 
 # Loop over recoMuons
+print "Beginning recoMuon loop..."
 nMuonPassed, nMuonPos, nMuonNeg = 0, 0, 0
 for counter, event in enumerate(recoMuons):
-  if counter % 200000 == 0: print counter, (counter +0.0)/event.GetEntries()
+  if counter % 200000 == 0: 
+	print "On event {} [{}% completed]".format(counter, 100*round((counter +0.0)/event.GetEntries(), 4))
   if(event.glb_trk_pt < thresholdPt or fabs(event.glb_trk_eta)>2.4 or not event.glb or not event.sta or event.sta_pt== 0.0 or event.glb_pt == 0.0  ): continue
   if(Event_ro_RUN>0):
     if nMuonPassed > Event_ro_RUN: break
