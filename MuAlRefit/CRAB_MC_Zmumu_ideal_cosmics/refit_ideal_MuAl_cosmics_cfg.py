@@ -5,7 +5,7 @@ process = cms.Process("MUALREFIT")
 process.source = cms.Source("PoolSource",
     #fileNames = cms.untracked.vstring('file:CCE41E3E-C38F-E811-A8E0-FA163E23AFD1.root')
     fileNames = cms.untracked.vstring(
-        'file:/afs/cern.ch/work/r/rymuelle/public/MA_optimizer/CMSSW_10_5_0/src/MuAlPhysicsValidation/MuAlRefit/CRAB_MC_Zmumu_ideal/56D29526-6364-E811-B583-02163E01A012.root'
+        'file:/afs/cern.ch/work/r/rymuelle/public/MA_optimizer/CMSSW_10_5_0/src/MuAlPhysicsValidation/MuAlRefit/CRAB_MC_Zmumu_ideal_cosmics/56D29526-6364-E811-B583-02163E01A012.root'
       #'file:/afs/cern.ch/work/r/rymuelle/public/MA_optimizer/CMSSW_10_5_0/src/MuAlPhysicsValidation/MuAlRefit/CRAB_MC_Zmumu_ideal/ZMM_13TeV_TuneCUETP8M1_cfi_GEN_SIM_RECOBEFMIX_DIGI_L1_DIGI2RAW_L1Reco_RECO_inRECO.root'
       )
 )
@@ -89,13 +89,13 @@ from CondCore.DBCommon.CondDBSetup_cfi import *
 
 #Muon geometry (CRAB copies take the files location in the crab.py file and copy it where the cmsRun command is executed)
 process.muonDtAlignment = cms.ESSource("PoolDBESSource", CondDBSetup,
-                                     connect = cms.string('sqlite_file:test_phi_shift_m.db'),
+                                     connect = cms.string('sqlite_file:Geometries/muonGeometry_IDEAL_AllZeroes.Ape6x6.StdTags.746p3.DBv2.db'),
                                      toGet   = cms.VPSet(cms.PSet(record = cms.string("DTAlignmentRcd"),  tag = cms.string("DTAlignmentRcd")))
                                      )
 process.es_prefer_muonDtAlignment = cms.ESPrefer("PoolDBESSource","muonDtAlignment")
 
 process.muonCscAlignment = cms.ESSource("PoolDBESSource", CondDBSetup,
-                                     connect = cms.string('sqlite_file:test_phi_shift_m.db'),
+                                     connect = cms.string('sqlite_file:Geometries/muonGeometry_IDEAL_AllZeroes.Ape6x6.StdTags.746p3.DBv2.db'),
                                      toGet   = cms.VPSet(cms.PSet(record = cms.string("CSCAlignmentRcd"), tag = cms.string("CSCAlignmentRcd")))
                                      )
 process.es_prefer_muonCscAlignment = cms.ESPrefer("PoolDBESSource","muonCscAlignment")
