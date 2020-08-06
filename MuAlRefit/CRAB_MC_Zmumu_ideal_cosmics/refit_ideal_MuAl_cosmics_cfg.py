@@ -5,12 +5,12 @@ process = cms.Process("MUALREFIT")
 process.source = cms.Source("PoolSource",
     #fileNames = cms.untracked.vstring('file:CCE41E3E-C38F-E811-A8E0-FA163E23AFD1.root')
     fileNames = cms.untracked.vstring(
-        'file:/afs/cern.ch/work/r/rymuelle/public/MA_optimizer/CMSSW_10_5_0/src/MuAlPhysicsValidation/MuAlRefit/CRAB_MC_Zmumu_ideal_cosmics/56D29526-6364-E811-B583-02163E01A012.root'
+        'file:./D6EF7545-BA2E-034C-A995-C3F54077BF73.root'
       #'file:/afs/cern.ch/work/r/rymuelle/public/MA_optimizer/CMSSW_10_5_0/src/MuAlPhysicsValidation/MuAlRefit/CRAB_MC_Zmumu_ideal/ZMM_13TeV_TuneCUETP8M1_cfi_GEN_SIM_RECOBEFMIX_DIGI_L1_DIGI2RAW_L1Reco_RECO_inRECO.root'
       )
 )
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(20))
 
 process.MessageLogger = cms.Service("MessageLogger",
                                     destinations = cms.untracked.vstring("cout"),
@@ -20,7 +20,7 @@ process.MessageLogger = cms.Service("MessageLogger",
                                    )
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = "105X_mcRun2cosmics_startup_deco_v2" #! GT Here
+process.GlobalTag.globaltag = "106X_dataRun2_v28" #! GT Here
 
 process.load('Configuration.StandardSequences.GeometryDB_cff')
 process.load("Geometry.CMSCommonData.cmsExtendedGeometry2018XML_cfi")
@@ -35,6 +35,8 @@ process.load("RecoTracker.TrackProducer.TrackRefitters_cff")
 #process.MeasurementTrackerEvent = process.MeasurementTrackerEvent.clone()
 
 process.muAlGeneralCosmicTracks = process.TrackRefitterP5.clone()
+process.muAlGeneralCosmicTracks.src = 'muons1Leg'
+process.muAlGeneralCosmicTracks.TrajectoryInEvent = True
 
 
 
