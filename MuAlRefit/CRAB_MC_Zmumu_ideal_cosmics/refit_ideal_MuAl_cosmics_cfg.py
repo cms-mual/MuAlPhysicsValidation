@@ -35,12 +35,12 @@ process.load("RecoTracker.TrackProducer.TrackRefitters_cff")
 #process.MeasurementTrackerEvent = process.MeasurementTrackerEvent.clone()
 
 process.muAlGeneralCosmicTracks = process.TrackRefitterP5.clone()
-process.muAlGeneralCosmicTracks.src = 'muons1Leg'
+process.muAlGeneralCosmicTracks.src = cms.InputTag("ALCARECOMuAlGlobalCosmics","StandAlone")
 process.muAlGeneralCosmicTracks.TrajectoryInEvent = True
 
 
 
-process.Path = cms.Path(process.muAlGeneralCosmicTracks)
+process.Path = cms.Path(process.offlineBeamSpot*process.muAlGeneralCosmicTracks)
 
 process.out = cms.OutputModule("PoolOutputModule",
                                 outputCommands = cms.untracked.vstring("keep *",
