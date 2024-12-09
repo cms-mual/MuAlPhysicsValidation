@@ -23,7 +23,8 @@ Implementation:
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/one/EDAnalyzer.h"
+
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -39,6 +40,9 @@ Implementation:
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "FWCore/Common/interface/TriggerNames.h"
+
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "TTree.h"
@@ -49,7 +53,7 @@ Implementation:
 // class declaration
 //
 
-class MuAlAnalyzer : public edm::EDAnalyzer {
+class MuAlAnalyzer : public edm::one::EDAnalyzer<> {
   public:
     explicit MuAlAnalyzer(const edm::ParameterSet&);
     ~MuAlAnalyzer();
@@ -76,6 +80,8 @@ class MuAlAnalyzer : public edm::EDAnalyzer {
     edm::EDGetTokenT<reco::BeamSpot> recoBeamSpotToken_;
     edm::EDGetTokenT<reco::GenParticleCollection> recoGenParticleToken_;
 
+    edm::EDGetTokenT<edm::TriggerResults> m_trigRes;
+
     bool  m_fillGenMuons;
     Int_t m_genMuonMotherId;
     bool  m_fillRecoMuons;
@@ -86,6 +92,13 @@ class MuAlAnalyzer : public edm::EDAnalyzer {
     Int_t b_n_recoMuons;
     Int_t b_n_genMuons;
     Int_t b_n_recoDimuons;
+
+    std::vector<std::string> signalHltPaths_;
+
+    // HLT
+    bool b_HLT_0;
+    bool b_HLT_1;
+    bool b_HLT_2;
 
     // GEN muons
     TTree * m_tree_genMuons;
@@ -199,6 +212,16 @@ class MuAlAnalyzer : public edm::EDAnalyzer {
     Float_t b_recoMu_neg_sta_eta;
     Float_t b_recoMu_neg_sta_phi;
 
+    Bool_t  b_recoMu_neg_tune;
+    Float_t b_recoMu_neg_tune_pt;
+    Float_t b_recoMu_neg_tune_eta;
+    Float_t b_recoMu_neg_tune_phi;
+
+    Bool_t  b_recoMu_pos_tune;
+    Float_t b_recoMu_pos_tune_pt;
+    Float_t b_recoMu_pos_tune_eta;
+    Float_t b_recoMu_pos_tune_phi;
+
     // RECO dimuons
     TTree * m_tree_recoDimuons;
     Bool_t  b_recoDimu_glb;
@@ -247,6 +270,11 @@ class MuAlAnalyzer : public edm::EDAnalyzer {
     Float_t b_recoDimu_hyb_m;
     Int_t b_recoDimu_hyb_sta_q;
 
+    Bool_t  b_recoDimu_tune;
+    Float_t b_recoDimu_tune_pt;
+    Float_t b_recoDimu_tune_eta;
+    Float_t b_recoDimu_tune_phi;
+    Float_t b_recoDimu_tune_m;
 
     TRandom *random; 
     int randomInt;
@@ -275,6 +303,9 @@ MuAlAnalyzer::MuAlAnalyzer( const edm::ParameterSet& iConfig ) {
   recoBeamSpotToken_ = consumes<reco::BeamSpot,edm::InEvent>( m_recoBeamSpot );
 
   m_fillRecoDimuons = iConfig.getParameter<bool>("fillRecoDimuons");
+
+  signalHltPaths_  = iConfig.getParameter<std::vector<std::string> >("signalHltPaths");
+  m_trigRes         = consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("TriggerResults"));
 
   edm::Service<TFileService> fs;
 
@@ -356,6 +387,10 @@ MuAlAnalyzer::MuAlAnalyzer( const edm::ParameterSet& iConfig ) {
     m_tree_recoDimuons = fs->make<TTree>("recoDimuons", "recoDimuons");
     m_tree_recoDimuons->Branch("recoMu_pos_IsoPF04",&b_recoMu_pos_IsoPF04,"recoMu_pos_IsoPF04/F");
     m_tree_recoDimuons->Branch("recoMu_neg_IsoPF04",&b_recoMu_neg_IsoPF04,"recoMu_neg_IsoPF04/F");
+    m_tree_recoDimuons->Branch("recoMu_HLT_0", &b_HLT_0, "recoMu_HLT_0/O");
+    m_tree_recoDimuons->Branch("recoMu_HLT_1", &b_HLT_1, "recoMu_HLT_1/O");
+    m_tree_recoDimuons->Branch("recoMu_HLT_2", &b_HLT_2, "recoMu_HLT_2/O");
+
     // GLB muons: positive
     m_tree_recoDimuons->Branch("pos_glb",&b_recoMu_pos_glb,"pos_glb/O");
     m_tree_recoDimuons->Branch("pos_glb_pt",&b_recoMu_pos_glb_pt,"pos_glb_pt/F");
@@ -389,6 +424,19 @@ MuAlAnalyzer::MuAlAnalyzer( const edm::ParameterSet& iConfig ) {
     m_tree_recoDimuons->Branch("neg_glb_pt",&b_recoMu_neg_glb_pt,"neg_glb_pt/F");
     m_tree_recoDimuons->Branch("neg_glb_eta",&b_recoMu_neg_glb_eta,"neg_glb_eta/F");
     m_tree_recoDimuons->Branch("neg_glb_phi",&b_recoMu_neg_glb_phi,"neg_glb_phi/F");
+
+    m_tree_recoDimuons->Branch("pos_tune",&b_recoMu_pos_tune,"pos_tune/O");
+    m_tree_recoDimuons->Branch("pos_tune_pt",&b_recoMu_pos_tune_pt,"pos_tune_pt/F");
+    m_tree_recoDimuons->Branch("pos_tune_eta",&b_recoMu_pos_tune_eta,"pos_tune_eta/F");
+    m_tree_recoDimuons->Branch("pos_tune_phi",&b_recoMu_pos_tune_phi,"pos_tune_phi/F");
+
+    m_tree_recoDimuons->Branch("neg_tune",&b_recoMu_neg_tune,"neg_tune/O");
+    m_tree_recoDimuons->Branch("neg_tune_pt",&b_recoMu_neg_tune_pt,"neg_tune_pt/F");
+    m_tree_recoDimuons->Branch("neg_tune_eta",&b_recoMu_neg_tune_eta,"neg_tune_eta/F");
+    m_tree_recoDimuons->Branch("neg_tune_phi",&b_recoMu_neg_tune_phi,"neg_tune_phi/F");
+
+
+
     if ( m_fillGenMuons ) {
 	// GEN muons matched to GLB muons: negative
 	m_tree_recoDimuons->Branch("neg_glb_gen",&b_recoMu_neg_glb_gen,"neg_glb_gen/O");
@@ -459,7 +507,14 @@ MuAlAnalyzer::MuAlAnalyzer( const edm::ParameterSet& iConfig ) {
 
     m_tree_recoDimuons->Branch("hyb_m",&b_recoDimu_hyb_m,"hyb_m/F");
     m_tree_recoDimuons->Branch("hyb_q",&b_recoDimu_hyb_sta_q,"hyb_q/F");
-    
+
+    m_tree_recoDimuons->Branch("tune",&b_recoDimu_tune,"tune/O");
+    m_tree_recoDimuons->Branch("tune_pt",&b_recoDimu_tune_pt,"tune_pt/F");
+    m_tree_recoDimuons->Branch("tune_eta",&b_recoDimu_tune_eta,"tune_eta/F");
+    m_tree_recoDimuons->Branch("tune_phi",&b_recoDimu_tune_phi,"tune_phi/F");
+    m_tree_recoDimuons->Branch("tune_m",&b_recoDimu_tune_m,"tune_m/F");
+
+
   }
 }
 
@@ -497,6 +552,28 @@ double My_dPhi (double phi1, double phi2) {
 
 // ------------ method called for each event  ------------
 void MuAlAnalyzer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSetup ) {
+
+
+  edm::Handle<edm::TriggerResults> TrResults;
+  iEvent.getByToken( m_trigRes, TrResults);
+  const edm::TriggerNames& trigNameStr = iEvent.triggerNames(*TrResults);
+  unsigned int trgSize = trigNameStr.size();
+  /*for (unsigned int itrig = 0; itrig != trgSize; ++itrig){
+    TString trigName = trigNameStr.triggerName(itrig);
+    std::cout << trigName << std::endl;}*/
+  b_HLT_0 = false; b_HLT_1 = false; b_HLT_2 = false;
+  if ( signalHltPaths_.size() > 0){
+    const std::string& s0 = signalHltPaths_[0];
+    if (trigNameStr.triggerIndex(s0) != trgSize){ b_HLT_0 = true; std::cout << "HLT 1 fired" << std::endl;}
+  }
+  if ( signalHltPaths_.size() > 1){
+    const std::string& s1 = signalHltPaths_[1];
+    if (trigNameStr.triggerIndex(s1) != trgSize) b_HLT_1 = true;
+  }
+  if ( signalHltPaths_.size() > 2){
+    const std::string& s2 = signalHltPaths_[2];
+    if (trigNameStr.triggerIndex(s2) != trgSize) b_HLT_2 = true;
+  }
 
   //****************************************************************************
   //                              GEN Muons                                     
@@ -587,7 +664,6 @@ void MuAlAnalyzer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSe
   // Muons
   std::vector<const reco::Muon*> recoMuonsSelected;
   std::vector<int> recoMuonsGlbMatchToGen;
-
   bool ZtightSele = true;
   bool ZtightSele_pass = false;
 
@@ -598,9 +674,9 @@ void MuAlAnalyzer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSe
 
     edm::Handle<reco::BeamSpot> beamspot;
     iEvent.getByToken(recoBeamSpotToken_, beamspot);
-
     if ( recoMuonCollection.isValid() ) {
 	for (reco::MuonCollection::const_iterator Mymuon = recoMuonCollection->begin();  Mymuon != recoMuonCollection->end();  ++Mymuon) {
+
 	  if ( Mymuon->isGlobalMuon() && Mymuon->isStandAloneMuon() ) {
 	    if ( Mymuon->globalTrack()->normalizedChi2()   < 10
 		  && Mymuon->innerTrack()->numberOfValidHits() > 10
@@ -859,6 +935,22 @@ void MuAlAnalyzer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSe
 	  b_recoMu_pos_glb_trk_eta = recoMuonPos->innerTrack()->eta();
 	  b_recoMu_pos_glb_trk_phi = recoMuonPos->innerTrack()->phi();
 
+
+          if ( recoMuonPos->tunePMuonBestTrack().isNonnull() ) {
+	    b_recoMu_pos_tune = true;
+	    b_recoMu_pos_tune_pt = recoMuonPos->tunePMuonBestTrack()->pt();
+	    b_recoMu_pos_tune_eta = recoMuonPos->tunePMuonBestTrack()->eta();
+	    b_recoMu_pos_tune_phi = recoMuonPos->tunePMuonBestTrack()->phi();
+	  } else {
+             b_recoMu_pos_tune = false;
+	     b_recoMu_pos_tune_pt = -1.0;
+	     b_recoMu_pos_tune_eta = 10.0;
+	     b_recoMu_pos_tune_phi = 5.0;
+          }
+
+
+
+
 	  if ( recoMuonPos->pickyTrack().isNonnull() ) {
 	    b_recoMu_pos_glb_pic     = true;
 	    b_recoMu_pos_glb_pic_pt  = recoMuonPos->pickyTrack()->pt();
@@ -923,6 +1015,19 @@ void MuAlAnalyzer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSe
 	  b_recoMu_neg_glb_trk_pt  = recoMuonNeg->innerTrack()->pt();
 	  b_recoMu_neg_glb_trk_eta = recoMuonNeg->innerTrack()->eta();
 	  b_recoMu_neg_glb_trk_phi = recoMuonNeg->innerTrack()->phi();
+
+
+          if ( recoMuonNeg->tunePMuonBestTrack().isNonnull() ) {
+	    b_recoMu_neg_tune = true;
+	    b_recoMu_neg_tune_pt = recoMuonNeg->tunePMuonBestTrack()->pt();
+	    b_recoMu_neg_tune_eta = recoMuonNeg->tunePMuonBestTrack()->eta();
+	    b_recoMu_neg_tune_phi = recoMuonNeg->tunePMuonBestTrack()->phi();
+	  } else {
+             b_recoMu_neg_tune = false;
+	     b_recoMu_neg_tune_pt = -1.0;
+	     b_recoMu_neg_tune_eta = 10.0;
+	     b_recoMu_neg_tune_phi = 5.0;
+          }
 
 	  if ( recoMuonNeg->pickyTrack().isNonnull() ) {
 	    b_recoMu_neg_glb_pic     = true;
@@ -1000,6 +1105,28 @@ void MuAlAnalyzer::analyze( const edm::Event& iEvent, const edm::EventSetup& iSe
 	  b_recoDimu_glb_trk_eta = tLV_dimu_trk.Eta();
 	  b_recoDimu_glb_trk_phi = tLV_dimu_trk.Phi();
 	  b_recoDimu_glb_trk_m   = tLV_dimu_trk.M();
+
+	  if ( b_recoMu_pos_tune == true && b_recoMu_neg_tune == true ) {
+	    TLorentzVector tLV_recoMuonPos_tune, tLV_recoMuonNeg_tune, tLV_dimu_tune;
+	    tLV_recoMuonPos_tune.SetPtEtaPhiM(b_recoMu_pos_tune_pt, b_recoMu_pos_tune_eta, b_recoMu_pos_tune_phi, 0.105658);
+	    tLV_recoMuonNeg_tune.SetPtEtaPhiM(b_recoMu_neg_tune_pt, b_recoMu_neg_tune_eta, b_recoMu_neg_tune_phi, 0.105658);
+	    tLV_dimu_tune = tLV_recoMuonPos_tune + tLV_recoMuonNeg_tune;
+
+	    b_recoDimu_tune     = true;
+	    b_recoDimu_tune_pt  = tLV_dimu_tune.Pt();
+	    b_recoDimu_tune_eta = tLV_dimu_tune.Eta();
+	    b_recoDimu_tune_phi = tLV_dimu_tune.Phi();
+	    b_recoDimu_tune_m   = tLV_dimu_tune.M();
+	  } else {
+	    b_recoDimu_tune     = false;
+	    b_recoDimu_tune_pt  = -1.0;
+	    b_recoDimu_tune_eta = 10.0;
+	    b_recoDimu_tune_phi =  5.0;
+	    b_recoDimu_tune_m   = -1.0;
+	  }
+
+
+      
 
 	  if ( b_recoMu_pos_glb_pic == true && b_recoMu_neg_glb_pic == true ) {
 	    TLorentzVector tLV_recoMuonPos_pic, tLV_recoMuonNeg_pic, tLV_dimu_pic;
